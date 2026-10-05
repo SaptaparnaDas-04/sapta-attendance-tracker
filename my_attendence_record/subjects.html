@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subjects - Attendance Tracker</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/auth.js"></script>
+
+    <style>
+        /* Dark Mode for Subjects page */
+        body.dark-mode .page-header h1 {
+            color: #e0e0e0;
+        }
+        
+        body.dark-mode .page-header p {
+            color: #a0a0a0;
+        }
+        
+        body.dark-mode .add-box {
+            background: #1e1e2e;
+            border-color: #2d2d3f;
+        }
+        
+        body.dark-mode .subject-card {
+            background: #1e1e2e;
+            border-color: #2d2d3f;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+        }
+        
+        body.dark-mode .subject-card h3 {
+            color: #e0e0e0;
+        }
+        
+        body.dark-mode .subject-card p {
+            color: #a0a0a0;
+        }
+        
+        body.dark-mode input,
+        body.dark-mode select {
+            background: #2d2d3f;
+            color: #e0e0e0;
+            border-color: #3d3d4f;
+        }
+        
+        body.dark-mode .edit-btn {
+            background: #2d2d3f;
+            color: #818cf8;
+        }
+        
+        body.dark-mode .delete-btn {
+            background: #4a1a1a;
+            color: #fca5a5;
+        }
+        
+        body.dark-mode .card-buttons .edit-btn[style*="background: #22c55e"] {
+            background: #16a34a;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+
+<nav class="navbar">
+    <div class="navbar-left">
+        <div class="logo">📚 <span>Attendance</span> Tracker</div>
+    </div>
+
+    <div class="navbar-right">
+        <div class="nav-links">
+            <a href="index.html">🏠 Home</a>
+            <a href="subjects.html" class="active">📚 Subjects</a>
+            <a href="calendar.html">📅 Calendar</a>
+            <a href="attendance.html">📝 Attendance</a>
+            <a href="report.html">📊 Reports</a>
+            <a href="holidays.html">🎉 Holidays</a>
+        </div>
+
+        <div class="user-badge">
+            <button onclick="toggleDarkMode()" id="darkModeToggle" title="Toggle Dark Mode" style="background:none; border:none; cursor:pointer; font-size:18px; margin-right:5px;">🌙</button>
+            <div class="avatar" id="userAvatar">S</div>
+            <span class="user-name" id="userName">User</span>
+            <button class="logout-btn" onclick="logoutUser()" title="Logout">🚪</button>
+        </div>
+    </div>
+</nav>
+
+<main class="page-container">
+    <div class="page-header">
+        <h1>📚 My Subjects</h1>
+        <p>Add the subjects you want to track.</p>
+    </div>
+
+    <!-- ADD SUBJECT FORM -->
+    <div class="add-box">
+        <input 
+            type="text" 
+            id="subjectInput" 
+            placeholder="Subject name (e.g., Mathematics)"
+        >
+        
+        <select id="subjectType">
+            <option value="general">📚 General</option>
+            <option value="theory">📖 Theory</option>
+            <option value="practical">🔬 Practical</option>
+        </select>
+        
+        <input 
+            type="text" 
+            id="subjectCode" 
+            placeholder="Subject Code (e.g., MATH101)"
+        >
+        
+        <button class="primary-btn" onclick="addSubject()">+ Add Subject</button>
+    </div>
+
+    <div id="subjectsList" class="subjects-grid"></div>
+</main>
+
+<script src="js/app.js"></script>
+<script src="js/subjects.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        checkAuth();
+        
+        // Update user badge
+        const avatar = document.getElementById("userAvatar");
+        const userName = document.getElementById("userName");
+        
+        if (avatar) avatar.textContent = getUserInitials();
+        if (userName) userName.textContent = getUserDisplayName();
+        
+        // Load Dark Mode
+        if (typeof loadDarkModePreference === "function") {
+            loadDarkModePreference();
+        }
+    });
+
+    // Toggle Settings Panel
+    function toggleSettingsPanel() {
+        const panel = document.getElementById('settingsPanel');
+        if (panel) {
+            if (panel.style.display === 'flex' || panel.style.display === 'block') {
+                panel.style.display = 'none';
+            } else {
+                panel.style.display = 'block';
+            }
+        }
+    }
+
+    // Close settings panel when clicking outside
+    document.addEventListener('click', function(event) {
+        const panel = document.getElementById('settingsPanel');
+        const button = document.getElementById('settingsButton');
+        
+        if (panel && panel.style.display === 'block') {
+            // If click is NOT on the panel AND NOT on the settings button
+            if (!panel.contains(event.target) && !button.contains(event.target)) {
+                panel.style.display = 'none';
+            }
+        }
+    });
+
+</script>
+
+<!-- ========================================
+     AI CHATBOT WIDGET
+======================================== -->
+
+<div id="chatbotWindow" style="display: none; position: fixed; bottom: 90px; right: 20px; width: 350px; max-height: 500px; background: white; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); z-index: 9999; flex-direction: column; overflow: hidden; border: 1px solid #e5e7eb;">
+    <div style="background: #4a6cf7; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center;">
+        <strong>🤖 AI Assistant</strong>
+        <button onclick="closeChatbot()" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer;">✕</button>
+    </div>
+    <div id="botMessages" style="flex: 1; padding: 15px; overflow-y: auto; max-height: 350px; background: #f8f9fa;">
+        <!-- Messages will appear here -->
+    </div>
+    <div style="padding: 10px; border-top: 1px solid #e5e7eb; display: flex; gap: 8px;">
+        <input type="text" id="botInput" placeholder="Ask me anything..." style="flex: 1; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px;" onkeypress="if(event.key === 'Enter') sendBotMessage();">
+        <button onclick="sendBotMessage()" style="background: #4a6cf7; color: white; border: none; border-radius: 8px; padding: 10px 15px; cursor: pointer;">➤</button>
+    </div>
+</div>
+
+<!-- Chatbot Floating Button -->
+<button onclick="openChatbot()" style="position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: #4a6cf7; color: white; border: none; font-size: 28px; cursor: pointer; box-shadow: 0 4px 20px rgba(74, 108, 247, 0.4); z-index: 9998;">🤖</button>
+
+<!-- ========================================
+     THEME PICKER + EXPORT (Floating Settings)
+======================================== -->
+
+<div id="settingsPanel" style="display: none; position: fixed; bottom: 90px; left: 20px; width: 300px; background: white; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); z-index: 9999; padding: 20px; border: 1px solid #e5e7eb;">
+    <h4 style="margin: 0 0 15px 0; font-size: 16px; color: #1a1a2e;">🎨 Theme Settings</h4>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px;">
+        <button onclick="setTheme('blue')" style="padding: 10px; border-radius: 8px; border: 2px solid #4a6cf7; background: #e8edf5; cursor: pointer; font-weight: 600; width: 100%;">🔵 Blue</button>
+        <button onclick="setTheme('green')" style="padding: 10px; border-radius: 8px; border: 2px solid #22c55e; background: #dcfce7; cursor: pointer; font-weight: 600; width: 100%;">🟢 Green</button>
+        <button onclick="setTheme('purple')" style="padding: 10px; border-radius: 8px; border: 2px solid #9333ea; background: #f3e8ff; cursor: pointer; font-weight: 600; width: 100%;">🟣 Purple</button>
+        <button onclick="setTheme('dark')" style="padding: 10px; border-radius: 8px; border: 2px solid #1e1e2e; background: #1e1e2e; color: white; cursor: pointer; font-weight: 600; width: 100%;">🌙 Dark</button>
+    </div>
+    
+    <h4 style="margin: 15px 0 10px 0; font-size: 16px; color: #1a1a2e;">📤 Export Data</h4>
+    <div style="display: flex; flex-direction: row; gap: 8px; margin-bottom: 10px;">
+        <button onclick="exportCSV()" style="padding: 10px; border-radius: 8px; border: none; background: #4a6cf7; color: white; cursor: pointer; font-size: 12px; flex: 1; white-space: nowrap;">📊 CSV</button>
+        <button onclick="exportJSON()" style="padding: 10px; border-radius: 8px; border: none; background: #22c55e; color: white; cursor: pointer; font-size: 12px; flex: 1; white-space: nowrap;">💾 JSON</button>
+    </div>
+    
+    <button onclick="requestNotificationPermission()" style="padding: 12px; border-radius: 8px; border: none; background: #f59e0b; color: white; cursor: pointer; font-size: 14px; width: 100%; font-weight: 600;">🔔 Enable Notifications</button>
+</div>
+
+<!-- Settings Floating Button -->
+<button id="settingsButton" onclick="toggleSettingsPanel()" style="position: fixed; bottom: 20px; left: 20px; width: 50px; height: 50px; border-radius: 50%; background: #f59e0b; color: white; border: none; font-size: 24px; cursor: pointer; box-shadow: 0 4px 20px rgba(245, 158, 11, 0.4); z-index: 9998;">⚙️</button>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/ai_assistant.js"></script>
+
+</body>
+</html>

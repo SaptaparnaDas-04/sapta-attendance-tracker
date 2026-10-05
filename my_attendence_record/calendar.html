@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#4a6cf7">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Attendance Tracker">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Attendance Tracker">
+    
+    <!-- PWA Icons -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
+    <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png">
+    
+    <title>Calendar - Attendance Tracker</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        /* Calendar specific styles */
+        .calendar-wrapper {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .calendar-container {
+            background: white;
+            padding: 24px;
+            border-radius: 14px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            border: 1px solid rgba(0,0,0,0.04);
+        }
+        
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .calendar-header h2 {
+            font-size: 22px;
+            color: #1a1a2e;
+            font-weight: 700;
+        }
+        
+        .calendar-nav {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        .calendar-nav button {
+            padding: 8px 16px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            font-size: 16px;
+            transition: 0.3s;
+            font-weight: 600;
+        }
+        
+        .calendar-nav button:hover {
+            background: #f0f2f5;
+            border-color: #4a6cf7;
+        }
+        
+        .today-btn {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 8px;
+            background: #4a6cf7;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: 0.3s;
+        }
+        
+        .today-btn:hover {
+            background: #3a56d4;
+            transform: translateY(-2px);
+        }
+        
+        .weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+            margin-top: 20px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 14px;
+            color: #666;
+            padding: 10px 0;
+            border-bottom: 2px solid #f0f2f5;
+        }
+        
+        .calendar-days {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+            margin-top: 8px;
+        }
+        
+        .calendar-day {
+            min-height: 85px;
+            padding: 8px 6px;
+            border: 2px solid transparent;
+            border-radius: 10px;
+            cursor: pointer;
+            background: #fafbfc;
+            transition: 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+        
+        .calendar-day:hover {
+            background: #e8edf5;
+            border-color: #4a6cf7;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(74, 108, 247, 0.15);
+        }
+        
+        .calendar-day .day-number {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a1a2e;
+        }
+        
+        .calendar-day.empty {
+            background: transparent;
+            border: none;
+            cursor: default;
+            min-height: auto;
+        }
+        
+        /* =========================================
+        TODAY HIGHLIGHT (BLUE - ALWAYS WINS!)
+        ========================================= */
+        .calendar-day.today,
+        .calendar-day.today.sunday {
+            border: 3px solid #4a6cf7 !important;       /* Blue Border */
+            background: #dbeafe !important;              /* Light Blue Background */
+            box-shadow: 0 0 0 4px rgba(74, 108, 247, 0.4) !important;  /* Outer Glow */
+            z-index: 10;
+        }
+
+        .calendar-day.today .day-number,
+        .calendar-day.today.sunday .day-number {
+            color: #4a6cf7 !important;                   /* Blue Number */
+            font-weight: 800 !important;
+        }
+
+        .calendar-day.today .sunday-label,
+        .calendar-day.today.sunday .sunday-label {
+            color: #4a6cf7 !important;                   /* Blue "Sunday" label */
+            background: #dbeafe !important;              /* Blue background */
+            border-color: #4a6cf7 !important;            /* Blue border */
+        }
+
+        .calendar-day.today .day-number {
+            color: #4a6cf7;
+            font-weight: 800;
+        }
+        
+        .calendar-day.holiday {
+            background: #fef3c7;
+            border-color: #f59e0b;
+        }
+        
+        .calendar-day.sunday {
+            background: #fee2e2;
+            border-color: #dc2626;
+        }
+        
+        .calendar-day .holiday-label,
+        .calendar-day .sunday-label {
+            display: block;
+            margin-top: 4px;
+            font-size: 9px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-align: center;
+            width: 100%;
+            max-width: 90px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .calendar-day .holiday-label {
+            color: #92400e;
+            background: rgba(245, 158, 11, 0.2);
+            border: 1px solid #f59e0b;
+        }
+        
+        .calendar-day .sunday-label {
+            color: #991b1b;
+            background: #fee2e2;
+            border: 1px solid #dc2626;
+        }
+        
+        .calendar-day .attendance-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-top: 4px;
+            display: inline-block;
+        }
+        
+        .calendar-day .attendance-dot.present {
+            background: #22c55e;
+        }
+        
+        .calendar-day .attendance-dot.absent {
+            background: #dc2626;
+        }
+        
+        .calendar-day .attendance-dot.cancelled {
+            background: #9ca3af;
+        }
+        
+        .selected-date {
+            margin-top: 22px;
+            background: white;
+            padding: 22px 24px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border: 1px solid rgba(0,0,0,0.04);
+            text-align: center;
+        }
+        
+        .calendar-legend {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 16px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .calendar-legend .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: #555;
+        }
+        
+        .calendar-legend .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        
+        .calendar-legend .legend-color.today-color {
+            border-color: #4a6cf7;
+            background: #e8edf5;
+        }
+        
+        .calendar-legend .legend-color.holiday-color {
+            border-color: #f59e0b;
+            background: #fef3c7;
+        }
+        
+        .calendar-legend .legend-color.sunday-color {
+            border-color: #dc2626;
+            background: #fee2e2;
+        }
+        
+        .calendar-legend .legend-color.present-color {
+            background: #22c55e;
+            border-color: #22c55e;
+        }
+        
+        .calendar-legend .legend-color.absent-color {
+            background: #dc2626;
+            border-color: #dc2626;
+        }
+        
+        .calendar-legend .legend-color.cancelled-color {
+            background: #9ca3af;
+            border-color: #9ca3af;
+        }
+        
+        /* Dark Mode Styles */
+        body.dark-mode .page-header h1 {
+            color: #e0e0e0;
+        }
+        
+        body.dark-mode .page-header p {
+            color: #a0a0a0;
+        }
+        
+        body.dark-mode .calendar-container {
+            background: #1e1e2e;
+            border-color: #2d2d3f;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+        }
+        
+        body.dark-mode .calendar-header h2 {
+            color: #e0e0e0;
+        }
+        
+        body.dark-mode .calendar-nav button {
+            background: #2d2d3f;
+            color: #e0e0e0;
+            border-color: #3d3d4f;
+        }
+        
+        body.dark-mode .calendar-nav button:hover {
+            background: #3d3d4f;
+        }
+        
+        body.dark-mode .today-btn {
+            background: #4a6cf7;
+            color: white;
+        }
+        
+        body.dark-mode .weekdays {
+            color: #a0a0a0;
+            border-bottom-color: #2d2d3f;
+        }
+        
+        body.dark-mode .calendar-day {
+            background: #2d2d3f;
+        }
+        
+        body.dark-mode .calendar-day:hover {
+            background: #3d3d4f;
+            border-color: #4a6cf7;
+        }
+        
+        body.dark-mode .calendar-day .day-number {
+            color: #e0e0e0;
+        }
+        
+        body.dark-mode .calendar-day.today {
+            border-color: #4a6cf7;
+            background: #2d2d3f;
+        }
+        
+        body.dark-mode .calendar-day.today .day-number {
+            color: #818cf8;
+        }
+        
+        body.dark-mode .calendar-day.holiday {
+            background: #451a03;
+            border-color: #f59e0b;
+        }
+        
+        body.dark-mode .calendar-day.holiday .day-number {
+            color: #fcd34d;
+        }
+        
+        body.dark-mode .calendar-day.sunday {
+            background: #450a0a;
+            border-color: #dc2626;
+        }
+        
+        body.dark-mode .calendar-day.sunday .day-number {
+            color: #fca5a5;
+        }
+        
+        body.dark-mode .holiday-label {
+            color: #fcd34d;
+            background: #451a03;
+            border-color: #f59e0b;
+        }
+        
+        body.dark-mode .sunday-label {
+            color: #fca5a5;
+            background: #450a0a;
+            border-color: #dc2626;
+        }
+        
+        body.dark-mode .selected-date {
+            background: #1e1e2e;
+            border-color: #2d2d3f;
+        }
+        
+        body.dark-mode .selected-date h3 {
+            color: #e0e0e0;
+        }
+        
+        body.dark-mode .selected-date p {
+            color: #a0a0a0;
+        }
+        
+        body.dark-mode .calendar-legend {
+            background: #2d2d3f;
+            border-color: #3d3d4f;
+        }
+        
+        body.dark-mode .calendar-legend .legend-item {
+            color: #a0a0a0;
+        }
+        
+        body.dark-mode .calendar-legend .legend-color.today-color {
+            background: #2d2d3f;
+            border-color: #4a6cf7;
+        }
+        
+        body.dark-mode .calendar-legend .legend-color.holiday-color {
+            background: #451a03;
+            border-color: #f59e0b;
+        }
+        
+        body.dark-mode .calendar-legend .legend-color.sunday-color {
+            background: #450a0a;
+            border-color: #dc2626;
+        }
+        
+        @media (max-width: 768px) {
+            .calendar-day {
+                min-height: 65px;
+                padding: 6px 4px;
+            }
+            
+            .calendar-day .day-number {
+                font-size: 15px;
+            }
+            
+            .calendar-day .holiday-label,
+            .calendar-day .sunday-label {
+                font-size: 8px;
+                max-width: 55px;
+            }
+            
+            .calendar-header h2 {
+                font-size: 18px;
+            }
+            
+            .calendar-container {
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<nav class="navbar">
+    <div class="navbar-left">
+        <div class="logo">📚 <span>Attendance</span> Tracker</div>
+    </div>
+
+    <div class="navbar-right">
+        <div class="nav-links">
+            <a href="index.html">🏠 Home</a>
+            <a href="subjects.html">📚 Subjects</a>
+            <a href="calendar.html" class="active">📅 Calendar</a>
+            <a href="attendance.html">📝 Attendance</a>
+            <a href="report.html">📊 Reports</a>
+            <a href="holidays.html">🎉 Holidays</a>
+        </div>
+
+        <div class="user-badge">
+            <button onclick="toggleDarkMode()" id="darkModeToggle" title="Toggle Dark Mode" style="background:none; border:none; cursor:pointer; font-size:18px; margin-right:5px;">🌙</button>
+            <div class="avatar" id="userAvatar">S</div>
+            <span class="user-name" id="userName">User</span>
+            <button class="logout-btn" onclick="logoutUser()" title="Logout">🚪</button>
+        </div>
+    </div>
+</nav>
+
+<main class="calendar-wrapper">
+
+    <div class="page-header">
+        <h1>📅 Attendance Calendar</h1>
+        <p>Select a date to mark attendance. Holidays are highlighted in yellow 🎉</p>
+    </div>
+
+    <div class="calendar-container">
+
+        <!-- Calendar Header -->
+        <div class="calendar-header">
+            <h2 id="calendarTitle">Loading...</h2>
+            <div class="calendar-nav">
+                <button id="previousMonth" class="secondary-btn">←</button>
+                <button id="todayButton" class="today-btn">Today</button>
+                <button id="nextMonth" class="secondary-btn">→</button>
+            </div>
+        </div>
+
+        <!-- Weekdays -->
+        <div class="weekdays">
+            <div>Sun</div>
+            <div>Mon</div>
+            <div>Tue</div>
+            <div>Wed</div>
+            <div>Thu</div>
+            <div>Fri</div>
+            <div>Sat</div>
+        </div>
+
+        <!-- Calendar Days -->
+        <div id="calendarDays" class="calendar-days"></div>
+
+        <!-- Legend -->
+        <div class="calendar-legend">
+            <span class="legend-item">
+                <span class="legend-color today-color"></span>
+                Today
+            </span>
+            <span class="legend-item">
+                <span class="legend-color holiday-color"></span>
+                Holiday
+            </span>
+            <span class="legend-item">
+                <span class="legend-color sunday-color"></span>
+                Sunday
+            </span>
+            <span class="legend-item">
+                <span class="legend-color present-color"></span>
+                Present
+            </span>
+            <span class="legend-item">
+                <span class="legend-color absent-color"></span>
+                Absent
+            </span>
+            <span class="legend-item">
+                <span class="legend-color cancelled-color"></span>
+                Cancelled
+            </span>
+        </div>
+
+    </div>
+
+    <!-- Selected Date -->
+    <div id="selectedDate" class="selected-date">
+        <h3>📌 Select a Date</h3>
+        <p>👆 Click on any date from the calendar above to mark attendance.</p>
+    </div>
+
+</main>
+
+<script src="js/auth.js"></script>
+<script src="js/holidays.js"></script>
+<script src="js/subjects.js"></script>
+<script src="js/attendance.js"></script>
+<script src="js/app.js"></script>
+<script src="js/calendar.js"></script>
+
+<script>
+    // Update user badge
+    document.addEventListener("DOMContentLoaded", function() {
+        if (typeof checkAuth === "function") {
+            checkAuth();
+        }
+        
+        const avatar = document.getElementById("userAvatar");
+        const userName = document.getElementById("userName");
+        
+        if (avatar && typeof getUserInitials === "function") {
+            avatar.textContent = getUserInitials();
+        }
+        if (userName && typeof getUserDisplayName === "function") {
+            userName.textContent = getUserDisplayName();
+        }
+        
+        // Load Dark Mode
+        if (typeof loadDarkModePreference === "function") {
+            loadDarkModePreference();
+        }
+    });
+
+    // Toggle Settings Panel
+    function toggleSettingsPanel() {
+        const panel = document.getElementById('settingsPanel');
+        if (panel) {
+            if (panel.style.display === 'flex' || panel.style.display === 'block') {
+                panel.style.display = 'none';
+            } else {
+                panel.style.display = 'block';
+            }
+        }
+    }
+
+    // Close settings panel when clicking outside
+    document.addEventListener('click', function(event) {
+        const panel = document.getElementById('settingsPanel');
+        const button = document.getElementById('settingsButton');
+        
+        if (panel && panel.style.display === 'block') {
+            // If click is NOT on the panel AND NOT on the settings button
+            if (!panel.contains(event.target) && !button.contains(event.target)) {
+                panel.style.display = 'none';
+            }
+        }
+    });
+
+</script>
+
+<!-- ========================================
+     AI CHATBOT WIDGET
+======================================== -->
+
+<div id="chatbotWindow" style="display: none; position: fixed; bottom: 90px; right: 20px; width: 350px; max-height: 500px; background: white; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); z-index: 9999; flex-direction: column; overflow: hidden; border: 1px solid #e5e7eb;">
+    <div style="background: #4a6cf7; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center;">
+        <strong>🤖 AI Assistant</strong>
+        <button onclick="closeChatbot()" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer;">✕</button>
+    </div>
+    <div id="botMessages" style="flex: 1; padding: 15px; overflow-y: auto; max-height: 350px; background: #f8f9fa;">
+        <!-- Messages will appear here -->
+    </div>
+    <div style="padding: 10px; border-top: 1px solid #e5e7eb; display: flex; gap: 8px;">
+        <input type="text" id="botInput" placeholder="Ask me anything..." style="flex: 1; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px;" onkeypress="if(event.key === 'Enter') sendBotMessage();">
+        <button onclick="sendBotMessage()" style="background: #4a6cf7; color: white; border: none; border-radius: 8px; padding: 10px 15px; cursor: pointer;">➤</button>
+    </div>
+</div>
+
+<!-- Chatbot Floating Button -->
+<button onclick="openChatbot()" style="position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: #4a6cf7; color: white; border: none; font-size: 28px; cursor: pointer; box-shadow: 0 4px 20px rgba(74, 108, 247, 0.4); z-index: 9998;">🤖</button>
+
+<<!-- ========================================
+     THEME PICKER + EXPORT (Floating Settings)
+======================================== -->
+
+<div id="settingsPanel" style="display: none; position: fixed; bottom: 90px; left: 20px; width: 300px; background: white; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); z-index: 9999; padding: 20px; border: 1px solid #e5e7eb;">
+    <h4 style="margin: 0 0 15px 0; font-size: 16px; color: #1a1a2e;">🎨 Theme Settings</h4>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px;">
+        <button onclick="setTheme('blue')" style="padding: 10px; border-radius: 8px; border: 2px solid #4a6cf7; background: #e8edf5; cursor: pointer; font-weight: 600; width: 100%;">🔵 Blue</button>
+        <button onclick="setTheme('green')" style="padding: 10px; border-radius: 8px; border: 2px solid #22c55e; background: #dcfce7; cursor: pointer; font-weight: 600; width: 100%;">🟢 Green</button>
+        <button onclick="setTheme('purple')" style="padding: 10px; border-radius: 8px; border: 2px solid #9333ea; background: #f3e8ff; cursor: pointer; font-weight: 600; width: 100%;">🟣 Purple</button>
+        <button onclick="setTheme('dark')" style="padding: 10px; border-radius: 8px; border: 2px solid #1e1e2e; background: #1e1e2e; color: white; cursor: pointer; font-weight: 600; width: 100%;">🌙 Dark</button>
+    </div>
+    
+    <h4 style="margin: 15px 0 10px 0; font-size: 16px; color: #1a1a2e;">📤 Export Data</h4>
+    <div style="display: flex; flex-direction: row; gap: 8px; margin-bottom: 10px;">
+        <button onclick="exportCSV()" style="padding: 10px; border-radius: 8px; border: none; background: #4a6cf7; color: white; cursor: pointer; font-size: 12px; flex: 1; white-space: nowrap;">📊 CSV</button>
+        <button onclick="exportJSON()" style="padding: 10px; border-radius: 8px; border: none; background: #22c55e; color: white; cursor: pointer; font-size: 12px; flex: 1; white-space: nowrap;">💾 JSON</button>
+    </div>
+    
+    <button onclick="requestNotificationPermission()" style="padding: 12px; border-radius: 8px; border: none; background: #f59e0b; color: white; cursor: pointer; font-size: 14px; width: 100%; font-weight: 600;">🔔 Enable Notifications</button>
+</div>
+
+<!-- Settings Floating Button -->
+<button id="settingsButton" onclick="toggleSettingsPanel()" style="position: fixed; bottom: 20px; left: 20px; width: 50px; height: 50px; border-radius: 50%; background: #f59e0b; color: white; border: none; font-size: 24px; cursor: pointer; box-shadow: 0 4px 20px rgba(245, 158, 11, 0.4); z-index: 9998;">⚙️</button>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/ai_assistant.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#4a6cf7">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Attendance Tracker">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Attendance Tracker">
+    
+    <!-- PWA Icons -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
+    <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png">
+    <link rel="apple-touch-startup-image" href="icon-512.png">
+    
+    <title>Attendance Tracker</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        /* Dark Mode Styles */
+        body.dark-mode {
+            background: #1a1a2e;
+            color: #e0e0e0;
+        }
+        
+        body.dark-mode .navbar {
+            background: #16213e;
+            color: #e0e0e0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        
+        body.dark-mode .nav-links a {
+            color: #a0a0a0;
+        }
+        
+        body.dark-mode .nav-links a:hover {
+            background: #1a1a2e;
+            color: white;
+        }
+        
+        body.dark-mode .dashboard-card,
+        body.dark-mode .feature-card,
+        body.dark-mode .reminder-section div {
+            background: #16213e;
+            color: #e0e0e0;
+            border-color: #0f3460;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+        }
+        
+        body.dark-mode .user-badge {
+            background: #1a1a2e;
+            color: #e0e0e0;
+        }
+        
+        body.dark-mode .hero {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+        }
+        
+        body.dark-mode .hero p {
+            color: #a0a0a0;
+        }
+        
+        body.dark-mode .attendance-message {
+            background: #0f3460;
+            color: #e0e0e0;
+        }
+        
+        body.dark-mode .attendance-message.good {
+            background: #064e3b;
+            color: #6ee7b7;
+        }
+        
+        body.dark-mode .attendance-message.warning {
+            background: #450a0a;
+            color: #fca5a5;
+        }
+        
+        body.dark-mode .attendance-message.equal {
+            background: #451a03;
+            color: #fcd34d;
+        }
+        
+        body.dark-mode input,
+        body.dark-mode select {
+            background: #1a1a2e;
+            color: #e0e0e0;
+            border-color: #0f3460;
+        }
+        
+        body.dark-mode .target-input-row input {
+            background: #1a1a2e;
+            color: #e0e0e0;
+            border-color: #0f3460;
+        }
+        
+        /* Today's Schedule Styles */
+        .today-schedule {
+            background: white;
+            border-radius: 14px;
+            padding: 28px 32px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            border: 1px solid rgba(0,0,0,0.04);
+            margin-bottom: 25px;
+        }
+        
+        .today-schedule h2 {
+            font-size: 20px;
+            color: #1a1a2e;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .today-schedule .today-date {
+            font-size: 16px;
+            color: #4a6cf7;
+            font-weight: 600;
+            margin-bottom: 15px;
+            padding: 8px 14px;
+            background: #e8edf5;
+            border-radius: 8px;
+            display: inline-block;
+        }
+        
+        .today-schedule .schedule-items {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .schedule-item {
+            padding: 12px 16px;
+            border-radius: 8px;
+            background: #f8f9fa;
+            border-left: 3px solid #4a6cf7;
+        }
+        
+        .schedule-item.holiday {
+            background: #fef3c7;
+            border-left-color: #f59e0b;
+        }
+        
+        .schedule-item.warning {
+            background: #fee2e2;
+            border-left-color: #dc2626;
+        }
+        
+        .schedule-item.success {
+            background: #dcfce7;
+            border-left-color: #22c55e;
+        }
+        
+        .schedule-item h4 {
+            font-size: 14px;
+            color: #1a1a2e;
+            margin-bottom: 4px;
+        }
+        
+        .schedule-item p {
+            font-size: 13px;
+            color: #666;
+            margin: 0;
+        }
+        
+        body.dark-mode .today-schedule {
+            background: #16213e;
+            color: #e0e0e0;
+            border-color: #0f3460;
+        }
+        
+        body.dark-mode .today-schedule h2 {
+            color: #e0e0e0;
+        }
+        
+        body.dark-mode .today-schedule .today-date {
+            background: #0f3460;
+            color: #818cf8;
+        }
+        
+        body.dark-mode .schedule-item {
+            background: #0f3460;
+            color: #e0e0e0;
+            border-left-color: #4a6cf7;
+        }
+        
+        body.dark-mode .schedule-item h4 {
+            color: #e0e0e0;
+        }
+        
+        body.dark-mode .schedule-item p {
+            color: #a0a0a0;
+        }
+        
+        body.dark-mode .schedule-item.holiday {
+            background: #451a03;
+            border-left-color: #f59e0b;
+        }
+        
+        body.dark-mode .schedule-item.warning {
+            background: #450a0a;
+            border-left-color: #dc2626;
+        }
+        
+        body.dark-mode .schedule-item.success {
+            background: #064e3b;
+            border-left-color: #22c55e;
+        }
+        
+        @media (max-width: 768px) {
+            .today-schedule .schedule-items {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Sunday Card Style (RED) */
+        .schedule-item.sunday {
+            background: #fee2e2;
+            border-left-color: #dc2626;
+        }
+
+        .schedule-item.sunday h4 {
+            color: #991b1b;
+        }
+
+        .schedule-item.sunday p {
+            color: #991b1b;
+        }
+
+        body.dark-mode .schedule-item.sunday {
+            background: #450a0a;
+            border-left-color: #dc2626;
+        }
+
+        body.dark-mode .schedule-item.sunday h4 {
+            color: #fca5a5;
+        }
+
+        body.dark-mode .schedule-item.sunday p {
+            color: #fca5a5;
+        }
+    </style>
+</head>
+
+<body>
+
+<nav class="navbar">
+    <div class="navbar-left">
+        <div class="logo">📚 <span>Attendance</span> Tracker</div>
+    </div>
+
+    <div class="navbar-right">
+        <div class="nav-links">
+            <a href="index.html" class="active">🏠 Home</a>
+            <a href="subjects.html">📚 Subjects</a>
+            <a href="calendar.html">📅 Calendar</a>
+            <a href="attendance.html">📝 Attendance</a>
+            <a href="report.html">📊 Reports</a>
+            <a href="holidays.html">🎉 Holidays</a>
+        </div>
+
+        <div class="user-badge">
+            <button onclick="toggleDarkMode()" id="darkModeToggle" title="Toggle Dark Mode" style="background:none; border:none; cursor:pointer; font-size:18px; margin-right:5px;">🌙</button>
+            <div class="avatar" id="userAvatar">S</div>
+            <span class="user-name" id="userName">User</span>
+            <button class="logout-btn" onclick="logoutUser()" title="Logout">🚪</button>
+        </div>
+    </div>
+</nav>
+
+<!-- INSTALL APP BANNER (PWA) -->
+<div id="installBanner">
+    <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 32px;">📱</span>
+            <div>
+                <strong style="font-size: 16px;">Install Attendance Tracker</strong>
+                <p style="margin: 0; font-size: 13px; color: #666;">Add to home screen for easy access</p>
+            </div>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <button onclick="installApp()" style="padding: 10px 24px; border: none; border-radius: 10px; background: #4a6cf7; color: white; font-weight: 600; cursor: pointer; font-size: 14px;">Install</button>
+            <button onclick="document.getElementById('installBanner').style.display='none'" style="padding: 8px 12px; border: none; background: none; cursor: pointer; font-size: 20px; color: #888;">✕</button>
+        </div>
+    </div>
+</div>
+
+<!-- HERO SECTION -->
+<section class="hero">
+    <div class="hero-content">
+        <h1>Track Your <span>Attendance</span></h1>
+        <p>Manage subjects, track daily attendance, and monitor your progress — all in one place.</p>
+        <a href="subjects.html" class="primary-btn">Get Started →</a>
+    </div>
+</section>
+
+<!-- TODAY'S SCHEDULE (NEW FEATURE) -->
+<section style="max-width: 1100px; margin: 0 auto 30px; padding: 0 20px;">
+    <div class="today-schedule">
+        <h2>📅 Today's Schedule</h2>
+        <div class="today-date" id="todayDate">Loading...</div>
+        <div class="schedule-items">
+            <div class="schedule-item" id="todaySubjects">
+                <h4>✅ Today's Subjects</h4>
+                <p id="todaySubjectsCount">Loading...</p>
+            </div>
+            <div class="schedule-item" id="todayHoliday">
+                <h4>🎉 Today's Holiday</h4>
+                <p id="todayHolidayName">No holiday today</p>
+            </div>
+            <div class="schedule-item" id="todayAttendanceStatus">
+                <h4>📝 Attendance Status</h4>
+                <p id="todayAttendanceText">Loading...</p>
+            </div>
+            <div class="schedule-item" id="todayTargetStatus">
+                <h4>🎯 Target Status</h4>
+                <p id="todayTargetText">Loading...</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- DASHBOARD -->
+<section class="dashboard-section">
+    <div class="dashboard-card">
+        <h2>📊 Overall Attendance</h2>
+        <div id="overallPercentage" class="overall-percentage">0.0%</div>
+        <div class="overall-stats">
+            <div class="stat-item">
+                <strong id="overallPresent">0</strong>
+                <span>✅ Present</span>
+            </div>
+            <div class="stat-item">
+                <strong id="overallAbsent">0</strong>
+                <span>❌ Absent</span>
+            </div>
+            <div class="stat-item">
+                <strong id="overallTotal">0</strong>
+                <span>📚 Total</span>
+            </div>
+        </div>
+        <div id="attendanceMessage" class="attendance-message">⚪ No attendance recorded yet.</div>
+    </div>
+
+    <div class="dashboard-card target-card">
+        <h2>🎯 Attendance Target</h2>
+        <label for="targetInput">Required attendance %</label>
+        <div class="target-input-row">
+            <input type="number" id="targetInput" min="0" max="100" value="75">
+            <span>%</span>
+        </div>
+        <button id="saveTargetButton" class="save-target-btn">Save Target</button>
+    </div>
+</section>
+
+<!-- SMART REMINDER -->
+<section class="reminder-section" style="max-width: 1100px; margin: 0 auto 30px; padding: 0 20px;">
+    <div style="background: white; border-radius: 14px; padding: 20px 25px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); border-left: 4px solid #f59e0b;">
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <span style="font-size: 24px;">🔔</span>
+            <div style="flex: 1;">
+                <h4 style="margin: 0; color: #1a1a2e; font-size: 16px;">Smart Reminder</h4>
+                <p id="reminderMessage" style="margin: 4px 0 0; color: #666; font-size: 14px;">Loading reminder...</p>
+            </div>
+            <button onclick="dismissReminder()" style="padding: 6px 16px; border: none; border-radius: 6px; background: #f0f2f5; cursor: pointer; font-size: 14px;">✖ Dismiss</button>
+        </div>
+    </div>
+</section>
+
+<!-- RESET BUTTONS -->
+<section style="max-width: 1100px; margin: 0 auto 40px; padding: 0 20px;">
+    <div style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: center;">
+        <button onclick="resetAllData()" class="reset-btn" style="padding: 14px 32px; border: none; border-radius: 10px; background: #dc2626; color: white; font-size: 16px; font-weight: 600; cursor: pointer;">🔄 Reset All Data</button>
+        <button onclick="resetAttendanceOnly()" class="reset-btn-light" style="padding: 14px 32px; border: 2px solid #f59e0b; border-radius: 10px; background: transparent; color: #92400e; font-size: 16px; font-weight: 600; cursor: pointer;">📊 Reset Attendance Only</button>
+        <button onclick="resetSubjectsOnly()" class="reset-btn-blue" style="padding: 14px 32px; border: 2px solid #4a6cf7; border-radius: 10px; background: transparent; color: #4a6cf7; font-size: 16px; font-weight: 600; cursor: pointer;">📚 Reset Subjects Only</button>
+    </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features">
+    <a href="subjects.html" class="feature-card"><span>📚</span><h4>Subjects</h4><p>Add and manage your subjects</p></a>
+    <a href="calendar.html" class="feature-card"><span>📅</span><h4>Daily Tracking</h4><p>Mark attendance day by day</p></a>
+    <a href="report.html" class="feature-card"><span>📊</span><h4>Reports</h4><p>View your analytics</p></a>
+    <a href="holidays.html" class="feature-card"><span>🎉</span><h4>Holidays</h4><p>Mark holidays on calendar</p></a>
+</section>
+
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+<script src="js/attendance.js"></script>
+<script src="js/subjects.js"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        checkAuth();
+        
+        const avatar = document.getElementById("userAvatar");
+        const userName = document.getElementById("userName");
+        if (avatar) avatar.textContent = getUserInitials();
+        if (userName) userName.textContent = getUserDisplayName();
+        
+        // Update dashboard
+        if (typeof updateDashboard === "function") updateDashboard();
+        
+        // Update reminder
+        if (typeof updateReminder === "function") setTimeout(updateReminder, 500);
+        
+        // Load Dark Mode
+        loadDarkModePreference();
+        
+        // Update Today's Schedule
+        updateTodaySchedule();
+        
+        // Check if app is installed
+        if (typeof checkAppInstalled === "function") checkAppInstalled();
+    });
+    
+    // ========================================
+    // DARK MODE TOGGLE
+    // ========================================
+    
+    function toggleDarkMode() {
+        const body = document.body;
+        body.classList.toggle('dark-mode');
+        
+        const isDark = body.classList.contains('dark-mode');
+        localStorage.setItem('darkMode', isDark ? 'enabled' : 'disabled');
+        
+        const toggle = document.getElementById('darkModeToggle');
+        if (toggle) toggle.textContent = isDark ? '☀️' : '🌙';
+    }
+    
+    function loadDarkModePreference() {
+        const darkMode = localStorage.getItem('darkMode');
+        const body = document.body;
+        const toggle = document.getElementById('darkModeToggle');
+        
+        if (darkMode === 'enabled') {
+            body.classList.add('dark-mode');
+            if (toggle) toggle.textContent = '☀️';
+        } else {
+            body.classList.remove('dark-mode');
+            if (toggle) toggle.textContent = '🌙';
+        }
+    }
+    
+    // ========================================
+    // TODAY'S SCHEDULE
+    // ========================================
+
+    function updateTodaySchedule() {
+        const today = new Date();
+        const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+        
+        // ✅ CHECK IF TODAY IS SUNDAY
+        const isSunday = today.getDay() === 0; // 0 = Sunday
+
+        // 1. Update Today's Date
+        const dateEl = document.getElementById('todayDate');
+        if (dateEl) {
+            dateEl.textContent = today.toLocaleDateString('en-IN', {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+            });
+        }
+        
+        // 2. Update Subjects (HIDE if Sunday)
+        const subjects = getSubjects();
+        const subjectsEl = document.getElementById('todaySubjectsCount');
+        const subjectsCard = document.getElementById('todaySubjects');
+        if (subjectsEl && subjectsCard) {
+            if (isSunday) {
+                subjectsEl.textContent = "🎉 No classes today! Enjoy your weekend!";
+                subjectsCard.classList.remove('schedule-item');
+                subjectsCard.classList.add('schedule-item', 'sunday');
+            } else {
+                subjectsEl.textContent = `${subjects.length} subjects scheduled`;
+                subjectsCard.classList.remove('sunday');
+                subjectsCard.classList.add('schedule-item');
+            }
+        }
+        
+        // 3. Update Holiday (including Sunday check)
+        const holidays = getHolidays();
+        const todayHoliday = holidays.find(h => h.date === todayString);
+        const holidayEl = document.getElementById('todayHolidayName');
+        const holidayCard = document.getElementById('todayHoliday');
+        if (holidayEl && holidayCard) {
+            if (todayHoliday) {
+                holidayEl.textContent = todayHoliday.name;
+                holidayCard.classList.add('holiday');
+                holidayCard.classList.remove('sunday');
+            } else if (isSunday) {
+                holidayEl.textContent = "🎉 Sunday Holiday";
+                holidayCard.classList.remove('holiday');
+                holidayCard.classList.add('sunday');
+            } else {
+                holidayEl.textContent = "No holiday today";
+                holidayCard.classList.remove('holiday');
+                holidayCard.classList.remove('sunday');
+            }
+        }
+        
+        // 4. Update Attendance Status
+        const records = getAttendanceRecords();
+        const todayRecords = records.filter(r => r.date === todayString);
+        const attendanceEl = document.getElementById('todayAttendanceText');
+        const attendanceCard = document.getElementById('todayAttendanceStatus');
+        if (attendanceEl && attendanceCard) {
+            if (isSunday) {
+                attendanceEl.textContent = "🎉 No attendance needed on Sunday!";
+                attendanceCard.classList.remove('warning', 'success');
+                attendanceCard.classList.add('sunday');
+            } else if (todayRecords.length === 0) {
+                attendanceEl.textContent = "Not marked yet";
+                attendanceCard.classList.remove('sunday');
+                attendanceCard.classList.add('warning');
+            } else {
+                const present = todayRecords.filter(r => r.status === 'present').length;
+                const absent = todayRecords.filter(r => r.status === 'absent').length;
+                const cancelled = todayRecords.filter(r => r.status === 'cancelled').length;
+                attendanceEl.textContent = `${present} present, ${absent} absent` + (cancelled > 0 ? `, ${cancelled} cancelled` : '');
+                if (absent > 0) {
+                    attendanceCard.classList.remove('sunday', 'success');
+                    attendanceCard.classList.add('warning');
+                } else {
+                    attendanceCard.classList.remove('sunday', 'warning');
+                    attendanceCard.classList.add('success');
+                }
+            }
+        }
+        
+        // 5. Update Target Status
+        const stats = getOverallStats();
+        const target = Number(localStorage.getItem('attendanceTarget')) || 75;
+        const targetEl = document.getElementById('todayTargetText');
+        const targetCard = document.getElementById('todayTargetStatus');
+        if (targetEl && targetCard) {
+            if (isSunday) {
+                targetEl.textContent = "🎉 No classes today!";
+                targetCard.classList.remove('warning', 'success');
+                targetCard.classList.add('sunday');
+            } else if (stats.total === 0) {
+                targetEl.textContent = "No data yet";
+                targetCard.classList.remove('sunday', 'warning', 'success');
+            } else if (stats.percentage >= target) {
+                targetEl.textContent = `✅ ${stats.percentage.toFixed(1)}% (Above ${target}%)`;
+                targetCard.classList.remove('sunday', 'warning');
+                targetCard.classList.add('success');
+            } else {
+                targetEl.textContent = `⚠️ ${stats.percentage.toFixed(1)}% (Below ${target}%)`;
+                targetCard.classList.remove('sunday', 'success');
+                targetCard.classList.add('warning');
+            }
+        }
+    }
+
+    // Toggle Settings Panel
+    function toggleSettingsPanel() {
+        const panel = document.getElementById('settingsPanel');
+        if (panel) {
+            if (panel.style.display === 'flex' || panel.style.display === 'block') {
+                panel.style.display = 'none';
+            } else {
+                panel.style.display = 'block';
+            }
+        }
+    }
+
+    // Close settings panel when clicking outside
+    document.addEventListener('click', function(event) {
+        const panel = document.getElementById('settingsPanel');
+        const button = document.getElementById('settingsButton');
+        
+        if (panel && panel.style.display === 'block') {
+            // If click is NOT on the panel AND NOT on the settings button
+            if (!panel.contains(event.target) && !button.contains(event.target)) {
+                panel.style.display = 'none';
+            }
+        }
+    });
+
+</script>
+
+<!-- ========================================
+     AI CHATBOT WIDGET
+======================================== -->
+
+<div id="chatbotWindow" style="display: none; position: fixed; bottom: 90px; right: 20px; width: 350px; max-height: 500px; background: white; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); z-index: 9999; flex-direction: column; overflow: hidden; border: 1px solid #e5e7eb;">
+    <div style="background: #4a6cf7; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center;">
+        <strong>🤖 AI Assistant</strong>
+        <button onclick="closeChatbot()" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer;">✕</button>
+    </div>
+    <div id="botMessages" style="flex: 1; padding: 15px; overflow-y: auto; max-height: 350px; background: #f8f9fa;">
+        <!-- Messages will appear here -->
+    </div>
+    <div style="padding: 10px; border-top: 1px solid #e5e7eb; display: flex; gap: 8px;">
+        <input type="text" id="botInput" placeholder="Ask me anything..." style="flex: 1; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px;" onkeypress="if(event.key === 'Enter') sendBotMessage();">
+        <button onclick="sendBotMessage()" style="background: #4a6cf7; color: white; border: none; border-radius: 8px; padding: 10px 15px; cursor: pointer;">➤</button>
+    </div>
+</div>
+
+<!-- Chatbot Floating Button -->
+<button onclick="openChatbot()" style="position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: #4a6cf7; color: white; border: none; font-size: 28px; cursor: pointer; box-shadow: 0 4px 20px rgba(74, 108, 247, 0.4); z-index: 9998;">🤖</button>
+
+<<!-- ========================================
+     THEME PICKER + EXPORT (Floating Settings)
+======================================== -->
+
+<div id="settingsPanel" style="display: none; position: fixed; bottom: 90px; left: 20px; width: 300px; background: white; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); z-index: 9999; padding: 20px; border: 1px solid #e5e7eb;">
+    <h4 style="margin: 0 0 15px 0; font-size: 16px; color: #1a1a2e;">🎨 Theme Settings</h4>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px;">
+        <button onclick="setTheme('blue')" style="padding: 10px; border-radius: 8px; border: 2px solid #4a6cf7; background: #e8edf5; cursor: pointer; font-weight: 600; width: 100%;">🔵 Blue</button>
+        <button onclick="setTheme('green')" style="padding: 10px; border-radius: 8px; border: 2px solid #22c55e; background: #dcfce7; cursor: pointer; font-weight: 600; width: 100%;">🟢 Green</button>
+        <button onclick="setTheme('purple')" style="padding: 10px; border-radius: 8px; border: 2px solid #9333ea; background: #f3e8ff; cursor: pointer; font-weight: 600; width: 100%;">🟣 Purple</button>
+        <button onclick="setTheme('dark')" style="padding: 10px; border-radius: 8px; border: 2px solid #1e1e2e; background: #1e1e2e; color: white; cursor: pointer; font-weight: 600; width: 100%;">🌙 Dark</button>
+    </div>
+    
+    <h4 style="margin: 15px 0 10px 0; font-size: 16px; color: #1a1a2e;">📤 Export Data</h4>
+    <div style="display: flex; flex-direction: row; gap: 8px; margin-bottom: 10px;">
+        <button onclick="exportCSV()" style="padding: 10px; border-radius: 8px; border: none; background: #4a6cf7; color: white; cursor: pointer; font-size: 12px; flex: 1; white-space: nowrap;">📊 CSV</button>
+        <button onclick="exportJSON()" style="padding: 10px; border-radius: 8px; border: none; background: #22c55e; color: white; cursor: pointer; font-size: 12px; flex: 1; white-space: nowrap;">💾 JSON</button>
+    </div>
+    
+    <button onclick="requestNotificationPermission()" style="padding: 12px; border-radius: 8px; border: none; background: #f59e0b; color: white; cursor: pointer; font-size: 14px; width: 100%; font-weight: 600;">🔔 Enable Notifications</button>
+</div>
+
+<!-- Settings Floating Button -->
+<button id="settingsButton" onclick="toggleSettingsPanel()" style="position: fixed; bottom: 20px; left: 20px; width: 50px; height: 50px; border-radius: 50%; background: #f59e0b; color: white; border: none; font-size: 24px; cursor: pointer; box-shadow: 0 4px 20px rgba(245, 158, 11, 0.4); z-index: 9998;">⚙️</button>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/ai_assistant.js"></script>
+
+</body>
+</html>

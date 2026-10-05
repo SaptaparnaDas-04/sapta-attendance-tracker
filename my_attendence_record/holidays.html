@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#4a6cf7">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Attendance Tracker">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Attendance Tracker">
+    
+    <!-- PWA Icons -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
+    <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png">
+    
+    <title>Holidays - Attendance Tracker</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        /* Holiday specific styles */
+        .holiday-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        
+        .holiday-actions button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+            font-size: 14px;
+        }
+        
+        .holiday-actions .btn-default {
+            background: #4a6cf7;
+            color: white;
+        }
+        
+        .holiday-actions .btn-default:hover {
+            background: #3a56d4;
+            transform: translateY(-2px);
+        }
+        
+        .holiday-actions .btn-clear {
+            background: #dc2626;
+            color: white;
+        }
+        
+        .holiday-actions .btn-clear:hover {
+            background: #b91c1c;
+            transform: translateY(-2px);
+        }
+        
+        .holiday-count {
+            background: #f0f2f5;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 13px;
+            color: #666;
+            display: inline-block;
+        }
+        
+        .info-box {
+            background: #e8edf5;
+            padding: 12px 18px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #1a1a2e;
+            border-left: 4px solid #4a6cf7;
+        }
+        
+        .info-box strong {
+            color: #4a6cf7;
+        }
+        
+        .info-box .badge-default {
+            background: #4a6cf7;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+        }
+        
+        .info-box .badge-custom {
+            background: #22c55e;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+        }
+        
+        /* Add box with green left border */
+        .add-box {
+            border-left: 3px solid #22c55e;
+        }
+        
+        .add-box .add-label {
+            display: flex;
+            align-items: center;
+            font-weight: 600;
+            color: #22c55e;
+            font-size: 14px;
+        }
+        
+        .add-box .add-holiday-btn {
+            background: #22c55e;
+            color: white;
+        }
+        
+        /* Dark mode styles */
+        body.dark-mode .holiday-actions .btn-default {
+            background: #4a6cf7;
+            color: white;
+        }
+        
+        body.dark-mode .holiday-count {
+            background: #2d2d3f;
+            color: #a0a0a0;
+        }
+        
+        body.dark-mode .info-box {
+            background: #2d2d3f;
+            color: #e0e0e0;
+            border-left-color: #4a6cf7;
+        }
+        
+        body.dark-mode .info-box strong {
+            color: #818cf8;
+        }
+        
+        body.dark-mode .info-box .badge-default {
+            background: #4a6cf7;
+            color: white;
+        }
+        
+        body.dark-mode .info-box .badge-custom {
+            background: #22c55e;
+            color: white;
+        }
+        
+        body.dark-mode .add-box {
+            background: #1e1e2e;
+            border-color: #2d2d3f;
+            border-left-color: #22c55e;
+        }
+        
+        body.dark-mode .add-box .add-label {
+            color: #22c55e;
+        }
+        
+        body.dark-mode .add-box .add-holiday-btn {
+            background: #22c55e;
+            color: white;
+        }
+        
+        body.dark-mode .holiday-actions .btn-clear {
+            background: #dc2626;
+            color: white;
+        }
+        
+        body.dark-mode .subject-card {
+            background: #1e1e2e;
+            border-color: #2d2d3f;
+        }
+        
+        body.dark-mode .subject-card h3 {
+            color: #e0e0e0;
+        }
+        
+        body.dark-mode .subject-card p {
+            color: #a0a0a0;
+        }
+        
+        body.dark-mode .edit-btn {
+            background: #2d2d3f;
+            color: #818cf8;
+        }
+        
+        body.dark-mode .delete-btn {
+            background: #4a1a1a;
+            color: #fca5a5;
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- ========================================
+     NAVIGATION
+======================================== -->
+
+<nav class="navbar">
+    <div class="navbar-left">
+        <div class="logo">📚 <span>Attendance</span> Tracker</div>
+    </div>
+
+    <div class="navbar-right">
+        <div class="nav-links">
+            <a href="index.html">🏠 Home</a>
+            <a href="subjects.html">📚 Subjects</a>
+            <a href="calendar.html">📅 Calendar</a>
+            <a href="attendance.html">📝 Attendance</a>
+            <a href="report.html">📊 Reports</a>
+            <a href="holidays.html" class="active">🎉 Holidays</a>
+        </div>
+
+        <div class="user-badge">
+            <button onclick="toggleDarkMode()" id="darkModeToggle" title="Toggle Dark Mode" style="background:none; border:none; cursor:pointer; font-size:18px; margin-right:5px;">🌙</button>
+            <div class="avatar" id="userAvatar">S</div>
+            <span class="user-name" id="userName">User</span>
+            <button class="logout-btn" onclick="logoutUser()" title="Logout">🚪</button>
+        </div>
+    </div>
+</nav>
+
+<!-- ========================================
+     MAIN CONTENT
+======================================== -->
+
+<main class="page-container">
+
+    <div class="page-header">
+        <h1>🎉 Manage Holidays</h1>
+        <p>
+            Add your own holidays or use default government holidays.
+            <span class="holiday-count" id="holidayCount">0 holidays</span>
+        </p>
+    </div>
+
+    <!-- Info Box -->
+    <div class="info-box">
+        <strong>📌 How it works:</strong><br>
+        • <span class="badge-default">Default</span> = Government holidays (pre-added)<br>
+        • <span class="badge-custom">Custom</span> = Holidays you add yourself<br>
+        • You can delete your own holidays anytime<br>
+        • Default holidays can be removed or kept
+    </div>
+
+    <!-- Holiday Actions -->
+    <div class="holiday-actions">
+        <button class="btn-default" onclick="addDefaultHolidays()">
+            📅 Add Govt Holidays
+        </button>
+        <button class="btn-clear" onclick="clearAllHolidays()">
+            🗑️ Clear All Holidays
+        </button>
+    </div>
+
+    <!-- Add Custom Holiday Form -->
+    <div class="add-box">
+        <span class="add-label">
+            ✏️ Add Your Own Holiday
+        </span>
+        <input type="date" id="holidayDate">
+        <input type="text" id="holidayName" placeholder="Holiday name (e.g., My Birthday)">
+        <button class="primary-btn add-holiday-btn" onclick="addHoliday()">
+            + Add Custom Holiday
+        </button>
+    </div>
+
+    <!-- Holiday List -->
+    <div id="holidayList" class="subjects-grid"></div>
+
+</main>
+
+<!-- ========================================
+     JAVASCRIPT
+======================================== -->
+
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+<script src="js/holidays.js"></script>
+<script src="js/calendar.js"></script>
+
+<script>
+    // Update user badge
+    document.addEventListener("DOMContentLoaded", function() {
+        if (typeof checkAuth === "function") {
+            checkAuth();
+        }
+        
+        const avatar = document.getElementById("userAvatar");
+        const userName = document.getElementById("userName");
+        
+        if (avatar && typeof getUserInitials === "function") {
+            avatar.textContent = getUserInitials();
+        }
+        if (userName && typeof getUserDisplayName === "function") {
+            userName.textContent = getUserDisplayName();
+        }
+        
+        // Load Dark Mode
+        if (typeof loadDarkModePreference === "function") {
+            loadDarkModePreference();
+        }
+        
+        // Update holiday count
+        const count = document.getElementById('holidayCount');
+        if (count) {
+            const holidays = JSON.parse(localStorage.getItem('holidays') || '[]');
+            const defaultCount = holidays.filter(h => h.isDefault).length;
+            const customCount = holidays.filter(h => !h.isDefault).length;
+            count.textContent = `${holidays.length} holidays (${defaultCount} default, ${customCount} custom)`;
+        }
+    });
+
+    // Toggle Settings Panel
+    function toggleSettingsPanel() {
+        const panel = document.getElementById('settingsPanel');
+        if (panel) {
+            if (panel.style.display === 'flex' || panel.style.display === 'block') {
+                panel.style.display = 'none';
+            } else {
+                panel.style.display = 'block';
+            }
+        }
+    }
+
+    // Close settings panel when clicking outside
+    document.addEventListener('click', function(event) {
+        const panel = document.getElementById('settingsPanel');
+        const button = document.getElementById('settingsButton');
+        
+        if (panel && panel.style.display === 'block') {
+            // If click is NOT on the panel AND NOT on the settings button
+            if (!panel.contains(event.target) && !button.contains(event.target)) {
+                panel.style.display = 'none';
+            }
+        }
+    });
+
+</script>
+
+<!-- ========================================
+     AI CHATBOT WIDGET
+======================================== -->
+
+<div id="chatbotWindow" style="display: none; position: fixed; bottom: 90px; right: 20px; width: 350px; max-height: 500px; background: white; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); z-index: 9999; flex-direction: column; overflow: hidden; border: 1px solid #e5e7eb;">
+    <div style="background: #4a6cf7; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center;">
+        <strong>🤖 AI Assistant</strong>
+        <button onclick="closeChatbot()" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer;">✕</button>
+    </div>
+    <div id="botMessages" style="flex: 1; padding: 15px; overflow-y: auto; max-height: 350px; background: #f8f9fa;">
+        <!-- Messages will appear here -->
+    </div>
+    <div style="padding: 10px; border-top: 1px solid #e5e7eb; display: flex; gap: 8px;">
+        <input type="text" id="botInput" placeholder="Ask me anything..." style="flex: 1; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px;" onkeypress="if(event.key === 'Enter') sendBotMessage();">
+        <button onclick="sendBotMessage()" style="background: #4a6cf7; color: white; border: none; border-radius: 8px; padding: 10px 15px; cursor: pointer;">➤</button>
+    </div>
+</div>
+
+<!-- Chatbot Floating Button -->
+<button onclick="openChatbot()" style="position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: #4a6cf7; color: white; border: none; font-size: 28px; cursor: pointer; box-shadow: 0 4px 20px rgba(74, 108, 247, 0.4); z-index: 9998;">🤖</button>
+
+<<!-- ========================================
+     THEME PICKER + EXPORT (Floating Settings)
+======================================== -->
+
+<div id="settingsPanel" style="display: none; position: fixed; bottom: 90px; left: 20px; width: 300px; background: white; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); z-index: 9999; padding: 20px; border: 1px solid #e5e7eb;">
+    <h4 style="margin: 0 0 15px 0; font-size: 16px; color: #1a1a2e;">🎨 Theme Settings</h4>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px;">
+        <button onclick="setTheme('blue')" style="padding: 10px; border-radius: 8px; border: 2px solid #4a6cf7; background: #e8edf5; cursor: pointer; font-weight: 600; width: 100%;">🔵 Blue</button>
+        <button onclick="setTheme('green')" style="padding: 10px; border-radius: 8px; border: 2px solid #22c55e; background: #dcfce7; cursor: pointer; font-weight: 600; width: 100%;">🟢 Green</button>
+        <button onclick="setTheme('purple')" style="padding: 10px; border-radius: 8px; border: 2px solid #9333ea; background: #f3e8ff; cursor: pointer; font-weight: 600; width: 100%;">🟣 Purple</button>
+        <button onclick="setTheme('dark')" style="padding: 10px; border-radius: 8px; border: 2px solid #1e1e2e; background: #1e1e2e; color: white; cursor: pointer; font-weight: 600; width: 100%;">🌙 Dark</button>
+    </div>
+    
+    <h4 style="margin: 15px 0 10px 0; font-size: 16px; color: #1a1a2e;">📤 Export Data</h4>
+    <div style="display: flex; flex-direction: row; gap: 8px; margin-bottom: 10px;">
+        <button onclick="exportCSV()" style="padding: 10px; border-radius: 8px; border: none; background: #4a6cf7; color: white; cursor: pointer; font-size: 12px; flex: 1; white-space: nowrap;">📊 CSV</button>
+        <button onclick="exportJSON()" style="padding: 10px; border-radius: 8px; border: none; background: #22c55e; color: white; cursor: pointer; font-size: 12px; flex: 1; white-space: nowrap;">💾 JSON</button>
+    </div>
+    
+    <button onclick="requestNotificationPermission()" style="padding: 12px; border-radius: 8px; border: none; background: #f59e0b; color: white; cursor: pointer; font-size: 14px; width: 100%; font-weight: 600;">🔔 Enable Notifications</button>
+</div>
+
+<!-- Settings Floating Button -->
+<button id="settingsButton" onclick="toggleSettingsPanel()" style="position: fixed; bottom: 20px; left: 20px; width: 50px; height: 50px; border-radius: 50%; background: #f59e0b; color: white; border: none; font-size: 24px; cursor: pointer; box-shadow: 0 4px 20px rgba(245, 158, 11, 0.4); z-index: 9998;">⚙️</button>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/ai_assistant.js"></script>
+
+</body>
+</html>

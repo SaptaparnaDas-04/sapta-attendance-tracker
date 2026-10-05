@@ -1,0 +1,3 @@
+const SUPABASE_URL = "https://renvcihlfsdmcsgwngnm.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJlbnZjaWhsZnNkbWNzZ3duZ25tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk3OTg3MjIsImV4cCI6MjEwNTM3NDcyMn0.9OQEitgf7-jkyDDySEudNxULsaWEjfz482TfOkO3oro";
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);

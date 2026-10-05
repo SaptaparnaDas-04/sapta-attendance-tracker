@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#4a6cf7">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Attendance Tracker">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Attendance Tracker">
+    
+    <!-- PWA Icons -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
+    <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png">
+    
+    <title>Login - Attendance Tracker</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        /* ========================================
+           AUTH CONTAINER
+        ========================================= */
+        
+        .auth-container {
+            max-width: 400px;
+            margin: 60px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        
+        .auth-container h1 {
+            text-align: center;
+            margin-bottom: 5px;
+            font-size: 28px;
+        }
+        
+        .auth-container h1 span {
+            color: #4a6cf7;
+        }
+        
+        .auth-container h2 {
+            text-align: center;
+            font-size: 20px;
+            margin-bottom: 25px;
+            color: #555;
+            font-weight: 400;
+        }
+        
+        /* ========================================
+           INPUT FIELDS
+        ========================================= */
+        
+        .auth-container input[type="text"],
+        .auth-container input[type="password"] {
+            width: 100%;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: 0.3s;
+            box-sizing: border-box;
+            background: #fafbfc;
+        }
+        
+        .auth-container input[type="text"]:focus,
+        .auth-container input[type="password"]:focus {
+            border-color: #4a6cf7;
+            outline: none;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(74, 108, 247, 0.1);
+        }
+        
+        /* ========================================
+           PASSWORD WRAPPER WITH EYE BUTTON
+        ========================================= */
+        
+        .password-wrapper {
+            position: relative;
+            width: 100%;
+            margin-bottom: 16px;
+        }
+        
+        .password-wrapper input {
+            width: 100%;
+            padding: 12px 50px 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: 0.3s;
+            box-sizing: border-box;
+            background: #fafbfc;
+        }
+        
+        .password-wrapper input:focus {
+            border-color: #4a6cf7;
+            outline: none;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(74, 108, 247, 0.1);
+        }
+        
+        .password-wrapper .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 20px;
+            padding: 5px;
+            color: #888;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+        }
+        
+        .password-wrapper .toggle-password:hover {
+            background: #f0f2f5;
+            color: #4a6cf7;
+        }
+        
+        .password-wrapper .toggle-password:active {
+            transform: translateY(-50%) scale(0.9);
+        }
+        
+        .password-wrapper .toggle-password.showing {
+            color: #4a6cf7;
+        }
+        
+        /* ========================================
+           BUTTONS
+        ========================================= */
+        
+        .auth-container .login-btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            background: #4a6cf7;
+            color: white;
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        
+        .auth-container .login-btn:hover {
+            background: #3a56d4;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(74, 108, 247, 0.3);
+        }
+        
+        .auth-container .login-btn:active {
+            transform: scale(0.97);
+        }
+        
+        /* ========================================
+           SWITCH / LINKS
+        ========================================= */
+        
+        .auth-container .switch {
+            text-align: center;
+            margin-top: 18px;
+            color: #666;
+            font-size: 15px;
+        }
+        
+        .auth-container .switch a {
+            color: #4a6cf7;
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        
+        .auth-container .switch a:hover {
+            text-decoration: underline;
+            color: #3a56d4;
+        }
+        
+        /* ========================================
+           ERROR MESSAGE
+        ========================================= */
+        
+        .auth-container .error {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 10px 14px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            display: none;
+            font-size: 14px;
+            border-left: 4px solid #dc2626;
+        }
+        
+        /* ========================================
+           RESPONSIVE
+        ========================================= */
+        
+        @media (max-width: 480px) {
+            .auth-container {
+                margin: 30px 16px;
+                padding: 28px 20px;
+            }
+            
+            .auth-container h1 {
+                font-size: 24px;
+            }
+            
+            .auth-container h2 {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- ========================================
+     LOGIN FORM
+======================================== -->
+
+<div class="auth-container" id="loginForm">
+    <h1>📚 <span>Attendance</span> Tracker</h1>
+    <h2>🔐 Login</h2>
+    
+    <div class="error" id="loginError">Invalid credentials!</div>
+    
+    <input type="text" id="loginUsername" placeholder="👤 Username">
+    
+    <!-- Password field with eye button -->
+    <div class="password-wrapper">
+        <input type="password" id="loginPassword" placeholder="🔑 Password">
+        <button class="toggle-password" onclick="togglePassword('loginPassword', this)" type="button" title="Show password">
+            👁️
+        </button>
+    </div>
+    
+    <button class="login-btn" onclick="loginUser()">Login →</button>
+    
+    <div class="switch">
+        Don't have an account? <a onclick="showSignup()">Sign up here</a>
+    </div>
+</div>
+
+<!-- ========================================
+     SIGNUP FORM
+======================================== -->
+
+<div class="auth-container" id="signupForm" style="display: none;">
+    <h1>📚 <span>Attendance</span> Tracker</h1>
+    <h2>📝 Create Account</h2>
+    
+    <div class="error" id="signupError">Username already exists!</div>
+    
+    <input type="text" id="signupUsername" placeholder="👤 Choose username">
+    
+    <!-- Password field with eye button -->
+    <div class="password-wrapper">
+        <input type="password" id="signupPassword" placeholder="🔑 Choose password (min 6 chars)">
+        <button class="toggle-password" onclick="togglePassword('signupPassword', this)" type="button" title="Show password">
+            👁️
+        </button>
+    </div>
+    
+    <input type="text" id="signupFullName" placeholder="📝 Your full name (optional)">
+    
+    <button class="login-btn" onclick="signupUser()">Create Account →</button>
+    
+    <div class="switch">
+        Already have an account? <a onclick="showLogin()">Login here</a>
+    </div>
+</div>
+
+<!-- ========================================
+     JAVASCRIPT
+======================================== -->
+
+<script src="js/auth.js"></script>
+<script>
+    // ========================================
+    // TOGGLE PASSWORD VISIBILITY
+    // ========================================
+    
+    function togglePassword(inputId, buttonElement) {
+        const input = document.getElementById(inputId);
+        
+        if (input.type === "password") {
+            // Show password
+            input.type = "text";
+            buttonElement.textContent = "🙈";
+            buttonElement.title = "Hide password";
+            buttonElement.classList.add('showing');
+        } else {
+            // Hide password
+            input.type = "password";
+            buttonElement.textContent = "👁️";
+            buttonElement.title = "Show password";
+            buttonElement.classList.remove('showing');
+        }
+        
+        // Focus the input
+        input.focus();
+    }
+    
+    // ========================================
+    // SHOW/HIDE FORMS
+    // ========================================
+    
+    function showSignup() {
+        document.getElementById('loginForm').style.display = 'none';
+        document.getElementById('signupForm').style.display = 'block';
+        document.getElementById('loginError').style.display = 'none';
+        document.getElementById('signupError').style.display = 'none';
+    }
+    
+    function showLogin() {
+        document.getElementById('loginForm').style.display = 'block';
+        document.getElementById('signupForm').style.display = 'none';
+        document.getElementById('loginError').style.display = 'none';
+        document.getElementById('signupError').style.display = 'none';
+    }
+    
+    // ========================================
+    // ENTER KEY SUPPORT
+    // ========================================
+    
+    document.addEventListener("DOMContentLoaded", function() {
+        if (typeof checkAuth === "function") checkAuth();
+        if (location.search.indexOf("signup=1") > -1) showSignup();
+        // Login form - Enter key
+        const loginPassword = document.getElementById("loginPassword");
+        if (loginPassword) {
+            loginPassword.addEventListener("keypress", function(e) {
+                if (e.key === "Enter") {
+                    loginUser();
+                }
+            });
+        }
+        
+        const loginUsername = document.getElementById("loginUsername");
+        if (loginUsername) {
+            loginUsername.addEventListener("keypress", function(e) {
+                if (e.key === "Enter") {
+                    loginUser();
+                }
+            });
+        }
+        
+        // Signup form - Enter key
+        const signupPassword = document.getElementById("signupPassword");
+        if (signupPassword) {
+            signupPassword.addEventListener("keypress", function(e) {
+                if (e.key === "Enter") {
+                    signupUser();
+                }
+            });
+        }
+        
+        const signupUsername = document.getElementById("signupUsername");
+        if (signupUsername) {
+            signupUsername.addEventListener("keypress", function(e) {
+                if (e.key === "Enter") {
+                    signupUser();
+                }
+            });
+        }
+    });
+
+    // Toggle Settings Panel
+    function toggleSettingsPanel() {
+        const panel = document.getElementById('settingsPanel');
+        if (panel) {
+            if (panel.style.display === 'flex' || panel.style.display === 'block') {
+                panel.style.display = 'none';
+            } else {
+                panel.style.display = 'block';
+            }
+        }
+    }
+
+    // Close settings panel when clicking outside
+    document.addEventListener('click', function(event) {
+        const panel = document.getElementById('settingsPanel');
+        const button = document.getElementById('settingsButton');
+        
+        if (panel && panel.style.display === 'block') {
+            // If click is NOT on the panel AND NOT on the settings button
+            if (!panel.contains(event.target) && !button.contains(event.target)) {
+                panel.style.display = 'none';
+            }
+        }
+    });
+
+</script>
+
+<!-- ========================================
+     AI CHATBOT WIDGET
+======================================== -->
+
+<div id="chatbotWindow" style="display: none; position: fixed; bottom: 90px; right: 20px; width: 350px; max-height: 500px; background: white; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); z-index: 9999; flex-direction: column; overflow: hidden; border: 1px solid #e5e7eb;">
+    <div style="background: #4a6cf7; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center;">
+        <strong>🤖 AI Assistant</strong>
+        <button onclick="closeChatbot()" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer;">✕</button>
+    </div>
+    <div id="botMessages" style="flex: 1; padding: 15px; overflow-y: auto; max-height: 350px; background: #f8f9fa;">
+        <!-- Messages will appear here -->
+    </div>
+    <div style="padding: 10px; border-top: 1px solid #e5e7eb; display: flex; gap: 8px;">
+        <input type="text" id="botInput" placeholder="Ask me anything..." style="flex: 1; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px;" onkeypress="if(event.key === 'Enter') sendBotMessage();">
+        <button onclick="sendBotMessage()" style="background: #4a6cf7; color: white; border: none; border-radius: 8px; padding: 10px 15px; cursor: pointer;">➤</button>
+    </div>
+</div>
+
+<!-- Chatbot Floating Button -->
+<button onclick="openChatbot()" style="position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: #4a6cf7; color: white; border: none; font-size: 28px; cursor: pointer; box-shadow: 0 4px 20px rgba(74, 108, 247, 0.4); z-index: 9998;">🤖</button>
+
+<<!-- ========================================
+     THEME PICKER + EXPORT (Floating Settings)
+======================================== -->
+
+<div id="settingsPanel" style="display: none; position: fixed; bottom: 90px; left: 20px; width: 300px; background: white; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); z-index: 9999; padding: 20px; border: 1px solid #e5e7eb;">
+    <h4 style="margin: 0 0 15px 0; font-size: 16px; color: #1a1a2e;">🎨 Theme Settings</h4>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px;">
+        <button onclick="setTheme('blue')" style="padding: 10px; border-radius: 8px; border: 2px solid #4a6cf7; background: #e8edf5; cursor: pointer; font-weight: 600; width: 100%;">🔵 Blue</button>
+        <button onclick="setTheme('green')" style="padding: 10px; border-radius: 8px; border: 2px solid #22c55e; background: #dcfce7; cursor: pointer; font-weight: 600; width: 100%;">🟢 Green</button>
+        <button onclick="setTheme('purple')" style="padding: 10px; border-radius: 8px; border: 2px solid #9333ea; background: #f3e8ff; cursor: pointer; font-weight: 600; width: 100%;">🟣 Purple</button>
+        <button onclick="setTheme('dark')" style="padding: 10px; border-radius: 8px; border: 2px solid #1e1e2e; background: #1e1e2e; color: white; cursor: pointer; font-weight: 600; width: 100%;">🌙 Dark</button>
+    </div>
+    
+    <h4 style="margin: 15px 0 10px 0; font-size: 16px; color: #1a1a2e;">📤 Export Data</h4>
+    <div style="display: flex; flex-direction: row; gap: 8px; margin-bottom: 10px;">
+        <button onclick="exportCSV()" style="padding: 10px; border-radius: 8px; border: none; background: #4a6cf7; color: white; cursor: pointer; font-size: 12px; flex: 1; white-space: nowrap;">📊 CSV</button>
+        <button onclick="exportJSON()" style="padding: 10px; border-radius: 8px; border: none; background: #22c55e; color: white; cursor: pointer; font-size: 12px; flex: 1; white-space: nowrap;">💾 JSON</button>
+    </div>
+    
+    <button onclick="requestNotificationPermission()" style="padding: 12px; border-radius: 8px; border: none; background: #f59e0b; color: white; cursor: pointer; font-size: 14px; width: 100%; font-weight: 600;">🔔 Enable Notifications</button>
+</div>
+
+<!-- Settings Floating Button -->
+<button id="settingsButton" onclick="toggleSettingsPanel()" style="position: fixed; bottom: 20px; left: 20px; width: 50px; height: 50px; border-radius: 50%; background: #f59e0b; color: white; border: none; font-size: 24px; cursor: pointer; box-shadow: 0 4px 20px rgba(245, 158, 11, 0.4); z-index: 9998;">⚙️</button>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/ai_assistant.js"></script>
+
+</body>
+</html>

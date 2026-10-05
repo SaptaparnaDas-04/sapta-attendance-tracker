@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports - Attendance Tracker</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/auth.js"></script>
+    
+    <!-- Chart.js for Graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        /* Dark Mode Styles */
+        body.dark-mode {
+            background: #1a1a2e;
+            color: #e0e0e0;
+        }
+        
+        body.dark-mode .navbar {
+            background: #16213e;
+            color: #e0e0e0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        
+        body.dark-mode .nav-links a {
+            color: #a0a0a0;
+        }
+        
+        body.dark-mode .nav-links a:hover {
+            background: #1a1a2e;
+            color: white;
+        }
+        
+        body.dark-mode .stat-card,
+        body.dark-mode .report-card {
+            background: #16213e;
+            color: #e0e0e0;
+            border-color: #0f3460;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+        }
+        
+        body.dark-mode .user-badge {
+            background: #1a1a2e;
+            color: #e0e0e0;
+        }
+        
+        body.dark-mode .section-title {
+            color: #e0e0e0;
+        }
+        
+        body.dark-mode .chart-container {
+            background: #16213e;
+            border-color: #0f3460;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+        }
+        
+        /* Chart Container */
+        .chart-container {
+            background: white;
+            border-radius: 14px;
+            padding: 24px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            border: 1px solid rgba(0,0,0,0.04);
+            margin-bottom: 25px;
+        }
+        
+        .chart-container h2 {
+            font-size: 20px;
+            color: #1a1a2e;
+            margin-bottom: 20px;
+        }
+        
+        .chart-wrapper {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+        
+        body.dark-mode .chart-container h2 {
+            color: #e0e0e0;
+        }
+    </style>
+</head>
+
+<body>
+
+<nav class="navbar">
+    <div class="navbar-left">
+        <div class="logo">📚 <span>Attendance</span> Tracker</div>
+    </div>
+
+    <div class="navbar-right">
+        <div class="nav-links">
+            <a href="index.html">🏠 Home</a>
+            <a href="subjects.html">📚 Subjects</a>
+            <a href="calendar.html">📅 Calendar</a>
+            <a href="attendance.html">📝 Attendance</a>
+            <a href="report.html" class="active">📊 Reports</a>
+            <a href="holidays.html">🎉 Holidays</a>
+        </div>
+
+        <div class="user-badge">
+            <button onclick="toggleDarkMode()" id="darkModeToggle" title="Toggle Dark Mode" style="background:none; border:none; cursor:pointer; font-size:18px; margin-right:5px;">🌙</button>
+            <div class="avatar" id="userAvatar">S</div>
+            <span class="user-name" id="userName">User</span>
+            <button class="logout-btn" onclick="logoutUser()" title="Logout">🚪</button>
+        </div>
+    </div>
+</nav>
+
+<main class="page-container">
+    <div class="page-header">
+        <h1>📊 Attendance Report</h1>
+        <p>View your overall and subject-wise attendance.</p>
+    </div>
+
+    <!-- STATS GRID -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>Overall Attendance</h3>
+            <div id="overallPercentage" class="big-number">0%</div>
+        </div>
+        <div class="stat-card">
+            <h3>✅ Present</h3>
+            <div id="overallPresent" class="big-number">0</div>
+        </div>
+        <div class="stat-card">
+            <h3>❌ Absent</h3>
+            <div id="overallAbsent" class="big-number">0</div>
+        </div>
+        <div class="stat-card">
+            <h3>📚 Total Classes</h3>
+            <div id="overallTotal" class="big-number">0</div>
+        </div>
+    </div>
+
+    <!-- ATTENDANCE TREND CHARTS (NEW FEATURE) -->
+    <div class="chart-container">
+        <h2>📈 Attendance Trend (Last 7 Days)</h2>
+        <div class="chart-wrapper">
+            <canvas id="weeklyChart"></canvas>
+        </div>
+    </div>
+
+    <div class="chart-container">
+        <h2>📈 Attendance Trend (Last 30 Days)</h2>
+        <div class="chart-wrapper">
+            <canvas id="monthlyChart"></canvas>
+        </div>
+    </div>
+
+    <h2 class="section-title">Subject-wise Attendance</h2>
+    <div id="subjectReports" class="report-grid"></div>
+</main>
+
+<script src="js/app.js"></script>
+<script src="js/attendance.js"></script>
+<script src="js/report.js"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        checkAuth();
+        
+        const avatar = document.getElementById("userAvatar");
+        const userName = document.getElementById("userName");
+        if (avatar) avatar.textContent = getUserInitials();
+        if (userName) userName.textContent = getUserDisplayName();
+        
+        // Load Dark Mode
+        loadDarkModePreference();
+        
+        // Display reports
+        if (typeof displayReports === "function") displayReports();
+        
+        // Generate Charts
+        setTimeout(createCharts, 500);
+    });
+    
+    // ========================================
+    // DARK MODE TOGGLE
+    // ========================================
+    
+    function toggleDarkMode() {
+        const body = document.body;
+        body.classList.toggle('dark-mode');
+        
+        const isDark = body.classList.contains('dark-mode');
+        localStorage.setItem('darkMode', isDark ? 'enabled' : 'disabled');
+        
+        const toggle = document.getElementById('darkModeToggle');
+        if (toggle) toggle.textContent = isDark ? '☀️' : '🌙';
+        
+        // Re-render charts with dark mode colors
+        setTimeout(createCharts, 100);
+    }
+    
+    function loadDarkModePreference() {
+        const darkMode = localStorage.getItem('darkMode');
+        const body = document.body;
+        const toggle = document.getElementById('darkModeToggle');
+        
+        if (darkMode === 'enabled') {
+            body.classList.add('dark-mode');
+            if (toggle) toggle.textContent = '☀️';
+        } else {
+            body.classList.remove('dark-mode');
+            if (toggle) toggle.textContent = '🌙';
+        }
+    }
+    
+    // ========================================
+    // GENERATE CHARTS
+    // ========================================
+    
+    function createCharts() {
+        const records = getAttendanceRecords();
+        const isDark = document.body.classList.contains('dark-mode');
+        
+        const textColor = isDark ? '#e0e0e0' : '#1a1a2e';
+        const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+        
+        // ===== WEEKLY CHART =====
+        const weeklyData = getLast7DaysData(records);
+        const weeklyCtx = document.getElementById('weeklyChart');
+        
+        if (weeklyCtx) {
+            const weeklyChart = new Chart(weeklyCtx, {
+                type: 'bar',
+                data: {
+                    labels: weeklyData.labels,
+                    datasets: [{
+                        label: 'Attendance %',
+                        data: weeklyData.percentages,
+                        backgroundColor: weeklyData.percentages.map(p => p >= 75 ? '#22c55e' : '#dc2626'),
+                        borderColor: weeklyData.percentages.map(p => p >= 75 ? '#16a34a' : '#b91c1c'),
+                        borderWidth: 1,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                color: textColor,
+                                callback: function(value) { return value + '%'; }
+                            },
+                            grid: {
+                                color: gridColor
+                            }
+                        },
+                        x: {
+                            ticks: { color: textColor },
+                            grid: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.parsed.y + '% attendance';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // ===== MONTHLY CHART =====
+        const monthlyData = getLast30DaysData(records);
+        const monthlyCtx = document.getElementById('monthlyChart');
+        
+        if (monthlyCtx) {
+            const monthlyChart = new Chart(monthlyCtx, {
+                type: 'line',
+                data: {
+                    labels: monthlyData.labels,
+                    datasets: [{
+                        label: 'Attendance %',
+                        data: monthlyData.percentages,
+                        fill: true,
+                        backgroundColor: 'rgba(74, 108, 247, 0.2)',
+                        borderColor: '#4a6cf7',
+                        tension: 0.4,
+                        pointBackgroundColor: '#4a6cf7',
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                color: textColor,
+                                callback: function(value) { return value + '%'; }
+                            },
+                            grid: { color: gridColor }
+                        },
+                        x: {
+                            ticks: { 
+                                color: textColor,
+                                maxRotation: 45,
+                                maxTicksLimit: 15
+                            },
+                            grid: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.parsed.y + '% attendance';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    }
+    
+    // ========================================
+    // GET DATA FOR CHARTS
+    // ========================================
+    
+    function getLast7DaysData(records) {
+        const labels = [];
+        const percentages = [];
+        
+        for (let i = 6; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+            
+            const dayRecords = records.filter(r => r.date === dateString);
+            const present = dayRecords.filter(r => r.status === 'present').length;
+            const absent = dayRecords.filter(r => r.status === 'absent').length;
+            const total = present + absent;
+            
+            const pct = total === 0 ? 0 : Math.round((present / total) * 100);
+            
+            labels.push(date.toLocaleDateString('en-IN', { weekday: 'short' }));
+            percentages.push(pct);
+        }
+        
+        return { labels, percentages };
+    }
+    
+    function getLast30DaysData(records) {
+        const labels = [];
+        const percentages = [];
+        
+        for (let i = 29; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+            
+            const dayRecords = records.filter(r => r.date === dateString);
+            const present = dayRecords.filter(r => r.status === 'present').length;
+            const absent = dayRecords.filter(r => r.status === 'absent').length;
+            const total = present + absent;
+            
+            const pct = total === 0 ? 0 : Math.round((present / total) * 100);
+            
+            labels.push(date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }));
+            percentages.push(pct);
+        }
+        
+        return { labels, percentages };
+    }
+
+    // Show analytics
+    function showAnalytics() {
+        const analytics = getAnalytics();
+        
+        const streakEl = document.getElementById("analyticsStreak");
+        if (streakEl) streakEl.textContent = analytics.streak;
+        
+        const bestDayEl = document.getElementById("analyticsBestDay");
+        if (bestDayEl) bestDayEl.textContent = analytics.bestDay;
+        
+        const worstSubjectEl = document.getElementById("analyticsWorstSubject");
+        if (worstSubjectEl) worstSubjectEl.textContent = analytics.worstSubject;
+        
+        const absentEl = document.getElementById("analyticsAbsent");
+        if (absentEl) absentEl.textContent = analytics.totalAbsent;
+    }
+
+    // Call when page loads
+    document.addEventListener("DOMContentLoaded", function() {
+        setTimeout(showAnalytics, 1000);
+    });
+
+    // Toggle Settings Panel
+    function toggleSettingsPanel() {
+        const panel = document.getElementById('settingsPanel');
+        if (panel) {
+            if (panel.style.display === 'flex' || panel.style.display === 'block') {
+                panel.style.display = 'none';
+            } else {
+                panel.style.display = 'block';
+            }
+        }
+    }
+
+    // Close settings panel when clicking outside
+    document.addEventListener('click', function(event) {
+        const panel = document.getElementById('settingsPanel');
+        const button = document.getElementById('settingsButton');
+        
+        if (panel && panel.style.display === 'block') {
+            // If click is NOT on the panel AND NOT on the settings button
+            if (!panel.contains(event.target) && !button.contains(event.target)) {
+                panel.style.display = 'none';
+            }
+        }
+    });
+
+</script>
+
+<!-- ========================================
+     AI CHATBOT WIDGET
+======================================== -->
+
+<div id="chatbotWindow" style="display: none; position: fixed; bottom: 90px; right: 20px; width: 350px; max-height: 500px; background: white; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); z-index: 9999; flex-direction: column; overflow: hidden; border: 1px solid #e5e7eb;">
+    <div style="background: #4a6cf7; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center;">
+        <strong>🤖 AI Assistant</strong>
+        <button onclick="closeChatbot()" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer;">✕</button>
+    </div>
+    <div id="botMessages" style="flex: 1; padding: 15px; overflow-y: auto; max-height: 350px; background: #f8f9fa;">
+        <!-- Messages will appear here -->
+    </div>
+    <div style="padding: 10px; border-top: 1px solid #e5e7eb; display: flex; gap: 8px;">
+        <input type="text" id="botInput" placeholder="Ask me anything..." style="flex: 1; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px;" onkeypress="if(event.key === 'Enter') sendBotMessage();">
+        <button onclick="sendBotMessage()" style="background: #4a6cf7; color: white; border: none; border-radius: 8px; padding: 10px 15px; cursor: pointer;">➤</button>
+    </div>
+</div>
+
+<!-- Chatbot Floating Button -->
+<button onclick="openChatbot()" style="position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: #4a6cf7; color: white; border: none; font-size: 28px; cursor: pointer; box-shadow: 0 4px 20px rgba(74, 108, 247, 0.4); z-index: 9998;">🤖</button>
+
+<!-- ========================================
+     THEME PICKER + EXPORT (Floating Settings)
+======================================== -->
+
+<div id="settingsPanel" style="display: none; position: fixed; bottom: 90px; left: 20px; width: 300px; background: white; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); z-index: 9999; padding: 20px; border: 1px solid #e5e7eb;">
+    <h4 style="margin: 0 0 15px 0; font-size: 16px; color: #1a1a2e;">🎨 Theme Settings</h4>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px;">
+        <button onclick="setTheme('blue')" style="padding: 10px; border-radius: 8px; border: 2px solid #4a6cf7; background: #e8edf5; cursor: pointer; font-weight: 600; width: 100%;">🔵 Blue</button>
+        <button onclick="setTheme('green')" style="padding: 10px; border-radius: 8px; border: 2px solid #22c55e; background: #dcfce7; cursor: pointer; font-weight: 600; width: 100%;">🟢 Green</button>
+        <button onclick="setTheme('purple')" style="padding: 10px; border-radius: 8px; border: 2px solid #9333ea; background: #f3e8ff; cursor: pointer; font-weight: 600; width: 100%;">🟣 Purple</button>
+        <button onclick="setTheme('dark')" style="padding: 10px; border-radius: 8px; border: 2px solid #1e1e2e; background: #1e1e2e; color: white; cursor: pointer; font-weight: 600; width: 100%;">🌙 Dark</button>
+    </div>
+    
+    <h4 style="margin: 15px 0 10px 0; font-size: 16px; color: #1a1a2e;">📤 Export Data</h4>
+    <div style="display: flex; flex-direction: row; gap: 8px; margin-bottom: 10px;">
+        <button onclick="exportCSV()" style="padding: 10px; border-radius: 8px; border: none; background: #4a6cf7; color: white; cursor: pointer; font-size: 12px; flex: 1; white-space: nowrap;">📊 CSV</button>
+        <button onclick="exportJSON()" style="padding: 10px; border-radius: 8px; border: none; background: #22c55e; color: white; cursor: pointer; font-size: 12px; flex: 1; white-space: nowrap;">💾 JSON</button>
+    </div>
+    
+    <button onclick="requestNotificationPermission()" style="padding: 12px; border-radius: 8px; border: none; background: #f59e0b; color: white; cursor: pointer; font-size: 14px; width: 100%; font-weight: 600;">🔔 Enable Notifications</button>
+</div>
+
+<!-- Settings Floating Button -->
+<button id="settingsButton" onclick="toggleSettingsPanel()" style="position: fixed; bottom: 20px; left: 20px; width: 50px; height: 50px; border-radius: 50%; background: #f59e0b; color: white; border: none; font-size: 24px; cursor: pointer; box-shadow: 0 4px 20px rgba(245, 158, 11, 0.4); z-index: 9998;">⚙️</button>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/ai_assistant.js"></script>
+
+
+</body>
+</html>
